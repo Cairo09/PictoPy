@@ -1,10 +1,13 @@
 from fastapi import APIRouter, HTTPException, Query, status
 from typing import List, Optional
-from app.database.images import db_get_all_images
+from app.database.images import (
+    db_get_all_images,
+    db_get_image_favourite_status,
+    db_toggle_image_favourite_status,
+)
 from app.schemas.images import ErrorResponse
 from app.utils.images import image_util_parse_metadata
 from pydantic import BaseModel
-from app.database.images import db_toggle_image_favourite_status
 from app.logging.setup_logging import get_logger
 
 # Initialize logger
@@ -104,16 +107,21 @@ def toggle_favourite(req: ToggleFavouriteRequest):
             raise HTTPException(
                 status_code=404, detail="Image not found or failed to toggle"
             )
-        # Fetch updated status to return
-        image = next(
-            (img for img in db_get_all_images() if img["id"] == image_id), None
-        )
+
+        is_favourite = db_get_image_favourite_status(image_id)
+        if is_favourite is None:
+            raise HTTPException(
+                status_code=404, detail="Image not found or failed to toggle"
+            )
+
         return {
             "success": True,
             "image_id": image_id,
-            "isFavourite": image.get("isFavourite", False),
+            "isFavourite": is_favourite,
         }
 
+    except HTTPException as e:
+        raise e
     except Exception as e:
         logger.error(f"error in /toggle-favourite route: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
