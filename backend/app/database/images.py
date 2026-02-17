@@ -432,7 +432,7 @@ def db_delete_images_by_ids(image_ids: List[ImageId]) -> bool:
 
 
 def db_toggle_image_favourite_status(image_id: str) -> bool:
-    conn = sqlite3.connect(DATABASE_PATH)
+    conn = _connect()
     cursor = conn.cursor()
     try:
         cursor.execute("SELECT id FROM images WHERE id = ?", (image_id,))
@@ -452,6 +452,23 @@ def db_toggle_image_favourite_status(image_id: str) -> bool:
         logger.error(f"Database error: {e}")
         conn.rollback()
         return False
+    finally:
+        conn.close()
+
+
+def db_get_image_favourite_status(image_id: str) -> Optional[bool]:
+    conn = _connect()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SELECT isFavourite FROM images WHERE id = ?", (image_id,))
+        result = cursor.fetchone()
+        if result is None:
+            return None
+        return bool(result[0])
+    except Exception as e:
+        logger.error(f"Error getting favourite status for image {image_id}: {e}")
+        return None
     finally:
         conn.close()
 
