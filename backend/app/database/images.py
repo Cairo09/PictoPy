@@ -457,7 +457,6 @@ def db_toggle_image_favourite_status(image_id: str) -> bool:
 
 
 def db_get_image_favourite_status(image_id: str) -> Optional[bool]:
-    """Return favourite status for a single image, or None if image does not exist."""
     conn = _connect()
     cursor = conn.cursor()
 
